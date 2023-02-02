@@ -1,12 +1,9 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-from deep_translator import GoogleTranslator
-#initialize the translator object
-translator = GoogleTranslator()
 
-
-
+headers = {
+        "Accept-Language": "en-GB,en-US;q=0.9,en;q=0.8"}
 def get_listing_id(identifier):
     url = "https://www.yourmoney.ch/ym/api/search?searchTerm={}"
     response = requests.post(url.format(identifier)).json()
@@ -16,7 +13,7 @@ def get_urllinks(listing_id):
     query_url = "https://www.yourmoney.ch/ym/details/" + listing_id + "#Tab0"
     return [query_url]
 def scrape_data(query_url):
-    response = requests.get(query_url)
+    response = requests.get(query_url,headers=headers)
     soup = BeautifulSoup(response.text, "html.parser")
 
 
