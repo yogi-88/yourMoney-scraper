@@ -86,6 +86,10 @@ for identifier in lines:
     urls = get_urllinks(listing_id)
     for url in urls:
         df = scrape_data(url, identifier)
+        #print(df)
+        #print(df[['ISIN']].to_string(index=False))
+        df['ISIN'] = [identifier]
+        #print(df[['ISIN']].to_string(index=False))
         if isinstance(df, str):
             continue
         results = pd.concat([results, df], ignore_index=True)
