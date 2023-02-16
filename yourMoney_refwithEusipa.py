@@ -59,10 +59,12 @@ def scrape_data(query_url,identifier):
         interestdata_list = interest_table.find_all("tr")
         concat_list = [x for list_ in (masterdata_list, interestdata_list) for x in list_]
         is_derivative = False
+
     elif eusip_table := soup.find("table", {"id": "eusipa-table"}):
         eusipdata_list = eusip_table.find_all("tr")[:3]
         concat_list = [x for list_ in (masterdata_list, eusipdata_list) for x in list_]
         is_derivative = True
+
     else:
         return pd.DataFrame({"ISIN": [identifier], "Type": ["Not available"]})
 
@@ -72,6 +74,7 @@ def scrape_data(query_url,identifier):
         th = tr.find("th")
         td = tr.find("td")
         if td:
+
             data[th.text] = td.text
 
     return pd.DataFrame(data, index=[0])
@@ -82,18 +85,33 @@ with open("./yourMoneyPortfolio.txt") as file:
 results = pd.DataFrame()
 
 for identifier in lines:
+    print(identifier)
     listing_id = get_listing_id(identifier)
     urls = get_urllinks(listing_id)
     for url in urls:
         df = scrape_data(url, identifier)
-        #print(df)
-        #print(df[['ISIN']].to_string(index=False))
+
+        try:
+            df['Issue Date'] = pd.to_datetime(df['Issue Date'], format='%m/%d/%Y').dt.strftime('%d/%m/%Y')
+        except (KeyError, ValueError):
+            df['Issue Date'] = pd.NaT
+        try:
+            df['Maturity Date'] = pd.to_datetime(df['Maturity Date'], format='%m/%d/%Y').dt.strftime('%d/%m/%Y')
+        except (KeyError, ValueError):
+            df['Maturity Date'] = pd.NaT
+        try:
+            df['Last Listing Date'] = pd.to_datetime(df['Last Listing Date'], format='%m/%d/%Y').dt.strftime('%d/%m/%Y')
+        except (KeyError, ValueError):
+            df['Last Listing Date'] = pd.NaT
+
         df['ISIN'] = [identifier]
-        #print(df[['ISIN']].to_string(index=False))
+
         if isinstance(df, str):
             continue
         results = pd.concat([results, df], ignore_index=True)
 
+
 results.rename(columns={'Domicile':'Country of Incorporation', 'Amount':'Issue amount','CCY':'Currency','Interest (p.a.)':'Interest rate','Call by Holder':'Put'}, inplace=True)
+
 filename = "YourMOney_refdata.xlsx"
 results.to_excel(filename, index=False)
